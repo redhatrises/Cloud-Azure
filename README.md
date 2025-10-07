@@ -7,6 +7,7 @@
 | Integration Name | Description |
 |:-|:-|
 | [VM Extension](https://github.com/CrowdStrike/azure-vm-extension) | Utilize VM Extensions to automatically deploy the CrowdStrike Falcon Sensor to your Azure Virtual Machines |
+| [Azure Machine Learning Compute Instances](mlcompute) | Example of how to deploy CrowdStrike Falcon sensors to your Azure Machine Learning Compute (non-cluster) instances |
 
 ## Azure Service Integrations
 
