@@ -1,0 +1,230 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "osType": {
+      "type": "string",
+      "defaultValue": "Windows",
+      "allowedValues": [
+        "Windows",
+        "Linux"
+      ],
+      "metadata": {
+        "description": "Operating System type (Windows or Linux)"
+      }
+    },
+    "imageTemplateName": {
+      "type": "string",
+      "defaultValue": "[concat('falcon-', toLower(parameters('osType')), '-image')]",
+      "metadata": {
+        "description": "Name of the Image Template"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "userAssignedIdentityId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the user-assigned managed identity for Image Builder"
+      }
+    },
+    "falconClientId": {
+      "type": "securestring",
+      "metadata": {
+        "description": "CrowdStrike Falcon API Client ID"
+      }
+    },
+    "falconClientSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "CrowdStrike Falcon API Client Secret"
+      }
+    },
+    "falconCloud": {
+      "type": "string",
+      "defaultValue": "us-1",
+      "allowedValues": [
+        "us-1",
+        "us-2",
+        "eu-1",
+        "us-gov-1"
+      ],
+      "metadata": {
+        "description": "CrowdStrike Falcon Cloud Region"
+      }
+    },
+    "falconInstallParams": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('osType'), 'Windows'), '/install /quiet /norestart NO_START=1', '')]",
+      "metadata": {
+        "description": "Additional installation parameters for Falcon sensor (Windows only, e.g., NO_START=1)"
+      }
+    },
+    "falconTags": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Comma-separated list of sensor grouping tags (Linux only)"
+      }
+    },
+    "sourceImagePublisher": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('osType'), 'Windows'), 'MicrosoftWindowsDesktop', 'Canonical')]",
+      "metadata": {
+        "description": "Publisher of the source image"
+      }
+    },
+    "sourceImageOffer": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('osType'), 'Windows'), 'Windows-11', '0001-com-ubuntu-server-jammy')]",
+      "metadata": {
+        "description": "Offer of the source image"
+      }
+    },
+    "sourceImageSku": {
+      "type": "string",
+      "defaultValue": "[if(equals(parameters('osType'), 'Windows'), 'win11-22h2-ent', '22_04-lts-gen2')]",
+      "metadata": {
+        "description": "SKU of the source image"
+      }
+    },
+    "sourceImageVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Version of the source image"
+      }
+    },
+    "imageReplicationRegions": {
+      "type": "array",
+      "defaultValue": [
+        "[parameters('location')]"
+      ],
+      "metadata": {
+        "description": "Regions where the image will be replicated"
+      }
+    },
+    "computeImageGalleryName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Compute Image Gallery"
+      }
+    },
+    "imageDefinitionName": {
+      "type": "string",
+      "defaultValue": "[concat('falcon-protected-', toLower(parameters('osType')))]",
+      "metadata": {
+        "description": "Name of the image definition in the gallery"
+      }
+    },
+    "runOutputName": {
+      "type": "string",
+      "defaultValue": "[concat('falcon', parameters('osType'), 'Image')]",
+      "metadata": {
+        "description": "Name of the image output"
+      }
+    }
+  },
+  "variables": {
+    "imageTemplateId": "[resourceId('Microsoft.VirtualMachineImages/imageTemplates', parameters('imageTemplateName'))]",
+    "computeImageGalleryId": "[resourceId('Microsoft.Compute/galleries', parameters('computeImageGalleryName'))]",
+    "imageDefinitionId": "[concat(variables('computeImageGalleryId'), '/images/', parameters('imageDefinitionName'))]",
+    "windowsCustomize": [
+      {
+        "type": "PowerShell",
+        "name": "Install-CrowdStrikeFalcon",
+        "inline": [
+          "Start-Transcript -Path C:\\Windows\\Temp\\falcon_install.log -Append",
+          "Write-Host 'Starting Falcon installation...'",
+          "Write-Host 'Timestamp:' (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
+          "$scriptUrl = 'https://raw.githubusercontent.com/CrowdStrike/falcon-scripts/main/powershell/install/falcon_windows_install.ps1'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $scriptPath = Join-Path $env:TEMP 'falcon_windows_install.ps1'",
+          "Write-Host 'Downloading installation script from GitHub...'",
+          "Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing -Verbose",
+          "Write-Host 'Script downloaded successfully'",
+          "Write-Host 'Executing Falcon installation script...'",
+          "[concat('& $scriptPath -FalconClientId ''', parameters('falconClientId'), ''' -FalconClientSecret ''', parameters('falconClientSecret'), ''' -FalconCloud ''', parameters('falconCloud'), ''' -InstallParams ''', parameters('falconInstallParams'), ''' -Verbose')]",
+          "Write-Host 'Falcon installation completed'",
+          "Write-Host 'Timestamp:' (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
+          "Stop-Transcript"
+        ],
+        "runElevated": true,
+        "runAsSystem": true
+      }
+    ],
+    "linuxCustomize": [
+      {
+        "type": "Shell",
+        "name": "Install-CrowdStrikeFalcon",
+        "inline": [
+          "echo 'Starting Falcon installation...'",
+          "echo \"Timestamp: $(date '+%Y-%m-%d %H:%M:%S')\"",
+          "echo 'Downloading installation script from GitHub...'",
+          "curl -sSL https://raw.githubusercontent.com/CrowdStrike/falcon-scripts/main/bash/install/falcon-linux-install.sh -o /tmp/falcon_linux_install.sh",
+          "chmod +x /tmp/falcon_linux_install.sh",
+          "echo 'Script downloaded successfully'",
+          "echo 'Executing Falcon installation script...'",
+          "[if(empty(parameters('falconTags')), concat('sudo FALCON_CLIENT_ID=\"', parameters('falconClientId'), '\" FALCON_CLIENT_SECRET=\"', parameters('falconClientSecret'), '\" FALCON_CLOUD=\"', parameters('falconCloud'), '\" PREP_GOLDEN_IMAGE=\"true\" /tmp/falcon_linux_install.sh'), concat('sudo FALCON_CLIENT_ID=\"', parameters('falconClientId'), '\" FALCON_CLIENT_SECRET=\"', parameters('falconClientSecret'), '\" FALCON_CLOUD=\"', parameters('falconCloud'), '\" FALCON_TAGS=\"', parameters('falconTags'), '\" PREP_GOLDEN_IMAGE=\"true\" /tmp/falcon_linux_install.sh'))]",
+          "echo 'Falcon installation completed'",
+          "echo \"Timestamp: $(date '+%Y-%m-%d %H:%M:%S')\""
+        ]
+      }
+    ]
+  },
+  "resources": [
+    {
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "2022-02-14",
+      "name": "[parameters('imageTemplateName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[parameters('userAssignedIdentityId')]": {}
+        }
+      },
+      "properties": {
+        "buildTimeoutInMinutes": 240,
+        "vmProfile": {
+          "vmSize": "Standard_D2s_v3",
+          "osDiskSizeGB": 127
+        },
+        "source": {
+          "type": "PlatformImage",
+          "publisher": "[parameters('sourceImagePublisher')]",
+          "offer": "[parameters('sourceImageOffer')]",
+          "sku": "[parameters('sourceImageSku')]",
+          "version": "[parameters('sourceImageVersion')]"
+        },
+        "customize": "[if(equals(parameters('osType'), 'Windows'), variables('windowsCustomize'), variables('linuxCustomize'))]",
+        "distribute": [
+          {
+            "type": "SharedImage",
+            "galleryImageId": "[variables('imageDefinitionId')]",
+            "runOutputName": "[parameters('runOutputName')]",
+            "replicationRegions": "[parameters('imageReplicationRegions')]",
+            "storageAccountType": "Standard_LRS"
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "imageTemplateId": {
+      "type": "string",
+      "value": "[variables('imageTemplateId')]"
+    },
+    "imageTemplateName": {
+      "type": "string",
+      "value": "[parameters('imageTemplateName')]"
+    },
+    "osType": {
+      "type": "string",
+      "value": "[parameters('osType')]"
+    }
+  }
+}

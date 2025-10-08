@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "osType": {
+      "value": "Windows"
+    },
+    "userAssignedIdentityId": {
+      "value": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP_NAME/providers/Microsoft.ManagedIdentity/userAssignedIdentities/YOUR_IDENTITY_NAME"
+    },
+    "falconClientId": {
+      "value": "YOUR_FALCON_CLIENT_ID"
+    },
+    "falconClientSecret": {
+      "value": "YOUR_FALCON_CLIENT_SECRET"
+    },
+    "falconCloud": {
+      "value": "us-1"
+    },
+    "computeImageGalleryName": {
+      "value": "YOUR_GALLERY_NAME"
+    },
+    "imageReplicationRegions": {
+      "value": [
+        "eastus",
+        "westus2"
+      ]
+    }
+  }
+}
