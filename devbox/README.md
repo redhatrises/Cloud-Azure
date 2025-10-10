@@ -1,8 +1,17 @@
-# Deploy CrowdStrike Falcon for Microsoft Dev Box using Azure Image Builder
+# Deploy CrowdStrike Falcon for Microsoft Dev Box
 
-This solution demonstrates how to create custom Microsoft Dev Box images with CrowdStrike Falcon sensor pre-installed using Azure Image Builder. Dev Boxes provisioned from these images will have endpoint protection built-in from the moment they are created, providing security from day one for your development teams.
+This guide provides two approaches for deploying CrowdStrike Falcon sensor to Microsoft Dev Box environments:
 
-## Prerequisites
+1. **Image-based deployment** using Azure Image Builder (recommended for baseline security)
+2. **Intune-based deployment** for centralized management and updates
+
+Both approaches can be used independently or together for comprehensive endpoint protection.
+
+## Approach 1: Image-Based Deployment (Azure Image Builder)
+
+This approach pre-installs the CrowdStrike Falcon sensor into custom Dev Box images, providing baseline security from the moment a Dev Box is provisioned.
+
+### Prerequisites
 
 - Microsoft Dev Center configured in your subscription
 - Follow the [Azure Image Builder with CrowdStrike Falcon guide](https://github.com/CrowdStrike/cloud-azure/tree/main/imagebuilder) to create your custom Windows image
@@ -10,7 +19,7 @@ This solution demonstrates how to create custom Microsoft Dev Box images with Cr
   - See [Microsoft Dev Box Image Builder documentation](https://learn.microsoft.com/en-us/azure/dev-box/how-to-customize-devbox-azure-image-builder)
 - Windows 11 Enterprise as the base image
 
-## Dev Box Configuration
+### Dev Box Configuration
 
 **Workflow:**
 ```
@@ -74,3 +83,26 @@ Developers can now provision Dev Boxes through:
   ```
 
 The Dev Box will provision with CrowdStrike Falcon already installed and configured.
+
+## Approach 2: Intune-Based Deployment
+
+This approach uses Microsoft Intune to deploy and manage the CrowdStrike Falcon sensor on Dev Boxes, providing centralized management, updates, and compliance monitoring.
+
+### Prerequisites
+
+- **Microsoft Intune** subscription and appropriate licensing
+- **Microsoft Entra ID** configured for automatic MDM enrollment
+- Dev Boxes enrolled in Intune management (automatic for Azure AD-joined Dev Boxes)
+
+### Deployment Steps
+
+#### 1. Ensure Dev Boxes are Enrolled in Intune
+
+Ensure your Microsoft Dev Boxes are enrolled in Intune management, either through automatic enrollment or manual configuration.
+
+See [Microsoft Dev Box management documentation](https://learn.microsoft.com/en-us/azure/dev-box/concept-dev-box-deployment-guide) for details.
+
+#### 2. Deploy CrowdStrike Falcon Sensor via Intune
+
+Follow the detailed steps in the [Installing the CrowdStrike Falcon Sensor using Microsoft Intune](https://github.com/CrowdStrike/Cloud-Azure/tree/main/intune) guide to create and deploy the CrowdStrike Falcon Sensor Intune to your Dev Boxes.
+

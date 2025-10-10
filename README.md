@@ -14,4 +14,6 @@
 | [VM Extension](https://github.com/CrowdStrike/azure-vm-extension) | Utilize VM Extensions to automatically deploy the CrowdStrike Falcon Sensor to your Azure Virtual Machines |
 | [Microsoft Intune](intune) | Deploy and manage CrowdStrike Falcon Sensor across your organization's Windows devices using Microsoft Intune |
 | [Azure Image Builder](imagebuilder) | Create custom Azure images with CrowdStrike Falcon sensor pre-installed using Azure Image Builder |
+| [Azure Virtual Desktop](avd) | Deploy CrowdStrike Falcon Sensor to Azure Virtual Desktop session hosts using Microsoft Intune |
+| [Microsoft Dev Box](devbox) | Deploy CrowdStrike Falcon Sensor to Microsoft Dev Box environments using Azure Image Builder or Microsoft Intune |
 | [Azure Machine Learning Compute Instances](mlcompute) | Example of how to deploy CrowdStrike Falcon sensors to your Azure Machine Learning Compute (non-cluster) instances |
